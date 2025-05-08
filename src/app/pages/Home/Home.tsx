@@ -1,4 +1,8 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
+import { useAtom } from "jotai";
+import { instance } from "../../../api/instance";
+import { gameNameAtom } from "../../stores/gameStore";
 import BackgroundStars from "../../components/ui/BackgroundStars";
 import BackgroundBlobs from "../../components/ui/BackgroundBlobs";
 import Header from "../../components/layout/Header";
@@ -6,7 +10,21 @@ import { container, item } from "../../components/animations/animations";
 import Categories from "./Categories/Categories";
 
 const HomePage = () => {
+  const [currentGame, setCurrentGame] = useState(null);
 
+  const [gameName, setGameName] = useAtom(gameNameAtom);
+
+  const createNewGame = () => {
+    try {
+      const gameResponse = instance.post("/game_service/games", {
+        name: gameName,
+      });
+
+      setCurrentGame(gameResponse.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-gradient-to-br from-gray-900 to-blue-900">
@@ -40,11 +58,15 @@ const HomePage = () => {
             <input
               type="text"
               placeholder="Введите название"
+              onChange={(e) => {
+                setGameName(e.target.value);
+              }}
               className="rounded-lg border-solid border-blue-500 p-4 text-xl text-gray-100 outline-2 outline-offset-2 outline-blue-500 outline-solid"
             />
 
             <motion.button
               className="h-20 w-lg cursor-pointer rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-2xl text-gray-100 hover:from-blue-500 hover:to-blue-600"
+              onClick={createNewGame}
               variants={item}
               whileHover={{
                 scale: 1.05,
