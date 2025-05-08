@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { container, item } from "../../../components/animations/animations";
+import { container } from "../../../components/animations/animations";
 import CategoryCard from "./CategoryCard";
 
 function Categories() {

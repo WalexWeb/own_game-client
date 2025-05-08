@@ -15,13 +15,15 @@ const HomePage = () => {
 
   const [gameName, setGameName] = useAtom(gameNameAtom);
 
-  const createNewGame = () => {
+  const createNewGame = async () => {
     try {
-      const gameResponse = instance.post("/game_service/games", {
+      const gameResponse = await instance.post("/game_service/games", {
         name: gameName,
       });
 
+      console.log(gameResponse);
       setCurrentGame(gameResponse.data);
+      console.log(currentGame);
     } catch (error) {
       console.error(error);
     }
