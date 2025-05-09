@@ -3,24 +3,28 @@ import { motion } from "framer-motion";
 function Header({ name }: { name: string }) {
   return (
     <motion.header
-      className="flex items-center justify-center"
-      initial={{ y: -50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.8 }}
+    initial={{ opacity: 0, y: -50 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.8 }}
+    className="mb-12"
+  >
+    <motion.h1
+      className="bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-center font-mono text-8xl font-bold text-transparent"
+      animate={{
+        textShadow: [
+          "0 0 10px rgba(74, 222, 128, 0.3)",
+          "0 0 20px rgba(34, 211, 238, 0.5)",
+          "0 0 10px rgba(74, 222, 128, 0.3)",
+        ],
+      }}
+      transition={{
+        duration: 5,
+        repeat: Infinity,
+      }}
     >
-      <motion.h1
-        className="bg-gradient-to-r from-cyan-400 to-indigo-600 bg-clip-text text-9xl font-extrabold text-transparent"
-        animate={{
-          backgroundPosition: ["0% 50%", "100% 50%"],
-        }}
-        transition={{
-          duration: 8,
-          repeatType: "reverse",
-        }}
-      >
-        {name.toUpperCase()}
-      </motion.h1>
-    </motion.header>
+      {`<${name}/>`}
+    </motion.h1>
+  </motion.header>
   );
 }
 

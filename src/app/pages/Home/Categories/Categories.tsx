@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { container } from "../../../components/animations/animations";
 import CategoryCard from "./CategoryCard";
 
 function Categories() {
@@ -12,22 +11,20 @@ function Categories() {
 
   return (
     <motion.div
-      className="w-full"
+      className="w-full max-w-2xl"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ delay: 0.5 }}
+      transition={{ delay: 0.7 }}
     >
-      <h3 className="mb-6 text-3xl font-medium text-gray-300">Категории</h3>
-      <motion.div
-        className="grid grid-cols-2 gap-4"
-        variants={container}
-        initial="hidden"
-        animate="visible"
-      >
+      <h3 className="mb-6 text-center font-mono text-2xl text-gray-300">
+        Категории
+      </h3>
+
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {categories.map((category) => (
           <CategoryCard category={category} key={category.id} />
         ))}
-      </motion.div>
+      </div>
     </motion.div>
   );
 }
