@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { item } from "../animations/animations";
 
 type ButtonProps = {
   onClick: () => void;
@@ -9,16 +8,23 @@ type ButtonProps = {
 function Button({ onClick, children }: ButtonProps) {
   return (
     <motion.button
-      className="h-20 w-lg cursor-pointer rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-2xl text-gray-100 hover:from-blue-500 hover:to-blue-600"
+      className="relative w-full cursor-pointer overflow-hidden rounded-lg bg-gradient-to-r from-green-600 to-cyan-600 px-6 py-4 font-mono text-lg text-white"
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      variants={item}
-      whileHover={{
-        scale: 1.05,
-      }}
-      transition={{ duration: 0.2 }}
-      whileTap={{ scale: 0.95 }}
     >
       {children}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-green-500/30 to-cyan-500/30"
+        animate={{
+          x: [-200, 300],
+        }}
+        transition={{
+          duration: 5,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+      />
     </motion.button>
   );
 }
