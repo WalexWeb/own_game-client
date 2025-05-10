@@ -7,8 +7,20 @@ import { useAtom } from "jotai";
 import { gameNameAtom } from "../../stores/gameStore";
 import { instance } from "../../../api/instance";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const ITHomePage = () => {
+interface ICategory {
+  name: string;
+  questions: {
+    text: string;
+    price: number;
+    answer: string;
+  }[];
+}
+
+const HomePage = () => {
+  const navigate = useNavigate();
+
   const [gameName, setGameName] = useAtom(gameNameAtom);
   const [currentGame, setCurrentGame] = useState(null);
 
@@ -22,81 +34,19 @@ const ITHomePage = () => {
       console.log(currentGame);
 
       await createCategories(gameResponse.data.id);
+
+      navigate("/game");
     } catch (error) {
       console.error("Error creating new game:", error);
     }
   };
 
   const createCategories = async (gameId: number) => {
-    const defaultCategories = [
-      {
-        name: "История",
-        questions: [
-          {
-            text: "Этот город был столицей России до Санкт-Петербурга",
-            price: 100,
-            answer: "Москва",
-          },
-          {
-            text: "Год основания Санкт-Петербурга",
-            price: 200,
-            answer: "1703",
-          },
-          {
-            text: "Последний император России",
-            price: 300,
-            answer: "Николай II",
-          },
-          {
-            text: "Какое событие произошло в России в 1917 году?",
-            price: 400,
-            answer: "Революция",
-          },
-        ],
-      },
-      {
-        name: "География",
-        questions: [
-          { text: "Самая длинная река в мире", price: 100, answer: "Нил" },
-          { text: "Самая высокая гора в мире", price: 200, answer: "Эверест" },
-          {
-            text: "Страна с самой большой территорией",
-            price: 300,
-            answer: "Россия",
-          },
-          {
-            text: "Какой океан является самым большим?",
-            price: 400,
-            answer: "Тихий океан",
-          },
-        ],
-      },
-      {
-        name: "Наука",
-        questions: [
-          {
-            text: "Автор теории относительности",
-            price: 100,
-            answer: "Альберт Эйнштейн",
-          },
-          { text: "Химический символ золота", price: 200, answer: "Au" },
-          {
-            text: "Самая близкая к Земле звезда",
-            price: 300,
-            answer: "Солнце",
-          },
-          {
-            text: "Какой элемент самый распространенный во Вселенной?",
-            price: 400,
-            answer: "Водород",
-          },
-        ],
-      },
-    ];
-
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    for (const category of defaultCategories) {
+    const categories: Array<ICategory> = [];
+
+    for (const category of categories) {
       try {
         const categoryResponse = await instance.post(
           `board_service/categories`,
@@ -199,4 +149,4 @@ const ITHomePage = () => {
   );
 };
 
-export default ITHomePage;
+export default HomePage;

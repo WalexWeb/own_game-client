@@ -1,15 +1,15 @@
 import { Route, Routes } from "react-router-dom";
-import Sections from "./pages/Sections";
-import Question from "./pages/Question";
+import Game from "./pages/Game";
 import Home from "./pages/Home/Home";
+import LeaderboardPage from "./pages/Leaderboard";
 
 function App() {
   return (
     <>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/sections" element={<Sections />} />
-        <Route path="/question" element={<Question />} />
+        <Route path="/game" element={<Game />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
       </Routes>
     </>
   );
