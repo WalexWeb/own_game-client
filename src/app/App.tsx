@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import Game from "./pages/Game";
 import Home from "./pages/Home/Home";
-import LeaderboardPage from "./pages/Leaderboard";
+import Leaderboard from "./pages/Leaderboard";
 
 function App() {
   return (
@@ -9,7 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/game" element={<Game />} />
-        <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
       </Routes>
     </>
   );

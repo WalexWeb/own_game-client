@@ -5,12 +5,13 @@ import Header from "../components/layout/Header";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
-import { useNavigate } from "react-router-dom";
 import {
   categoriesAtom,
   gameNameAtom,
   startTextAtom,
+  teamsAtom,
 } from "../stores/gameStore";
+import { useNavigate } from "react-router-dom";
 
 interface IQuestion {
   id: number;
@@ -28,8 +29,10 @@ interface ICategory {
 
 const Game = () => {
   const [gameName] = useAtom(gameNameAtom);
+  const [teams, setTeams] = useAtom(teamsAtom);
   const navigate = useNavigate();
   const [categories, setCategories] = useAtom(categoriesAtom);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [selectedQuestion, setSelectedQuestion] = useState<IQuestion | null>(
     null,
   );
@@ -162,6 +165,7 @@ const Game = () => {
     if (question.isAnswered) return;
     setSelectedQuestion(question);
     setShowAnswer(false);
+    setSelectedTeamId(null);
   };
 
   const revealAnswer = () => {
@@ -169,9 +173,19 @@ const Game = () => {
   };
 
   const markAsAnswered = () => {
-    if (!selectedQuestion) return;
+    if (!selectedQuestion || !selectedTeamId) return;
 
-    setCategories((prevCategories = []) =>
+    // 1. Обновляем счет команды
+    setTeams((prevTeams) =>
+      prevTeams.map((team) =>
+        team.id === selectedTeamId
+          ? { ...team, score: team.score + selectedQuestion.price }
+          : team,
+      ),
+    );
+
+    // 2. Помечаем вопрос как отвеченный
+    setCategories((prevCategories) =>
       prevCategories.map((category) => ({
         ...category,
         questions: category.questions.map((q) =>
@@ -179,7 +193,11 @@ const Game = () => {
         ),
       })),
     );
+
+    // 3. Сбрасываем выбранные значения
     setSelectedQuestion(null);
+    setSelectedTeamId(null);
+    setShowAnswer(false);
   };
 
   const handleLeaderboard = () => {
@@ -299,12 +317,43 @@ const Game = () => {
                         <p className="font-mono text-gray-100">
                           {selectedQuestion.answer}
                         </p>
+
+                        {/* Выбор команды для начисления баллов */}
+                        <div className="mt-4">
+                          <h4 className="mb-2 font-mono font-bold text-green-400">
+                            Начислить баллы команде:
+                          </h4>
+                          <div className="grid grid-cols-3 gap-2">
+                            {teams.map((team) => (
+                              <motion.div
+                                key={team.id}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setSelectedTeamId(team.id)}
+                                className={clsx(
+                                  "cursor-pointer rounded-lg p-3 text-center font-mono font-bold transition",
+                                  selectedTeamId === team.id
+                                    ? "ring-2 ring-green-400"
+                                    : "",
+                                  team.colorClass,
+                                )}
+                              >
+                                {team.name}
+                              </motion.div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                       <div className="flex justify-end space-x-4">
                         <Button onClick={() => setSelectedQuestion(null)}>
                           Закрыть
                         </Button>
-                        <Button onClick={markAsAnswered}>Принять ответ</Button>
+                        <Button
+                          onClick={markAsAnswered}
+                          disabled={!selectedTeamId}
+                        >
+                          Подтвердить
+                        </Button>
                       </div>
                     </>
                   ) : (

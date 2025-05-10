@@ -35,7 +35,7 @@ const HomePage = () => {
 
       await createCategories(gameResponse.data.id);
 
-      navigate("/game");
+      navigate("/leaderboard");
     } catch (error) {
       console.error("Error creating new game:", error);
     }

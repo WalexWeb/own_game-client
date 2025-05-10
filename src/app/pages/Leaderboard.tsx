@@ -1,18 +1,18 @@
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useAtom, useAtomValue } from "jotai";
 import { useNavigate } from "react-router-dom";
 import clsx from "clsx";
 import BackgroundCode from "../components/ui/BackgroundCode";
 import Header from "../components/layout/Header";
+import { gameNameAtom, teamsAtom } from "../stores/gameStore";
+import { useEffect } from "react";
 import { instance } from "../../api/instance";
-import { useAtomValue } from "jotai";
-import { gameNameAtom } from "../stores/gameStore";
+import { ITeam } from "../../types/ITeam";
 
-interface ITeam {
+interface ITeamBase {
   id: number;
   name: string;
   score: number;
-  colorClass: string;
 }
 
 const TEAM_COLORS = [
@@ -33,36 +33,57 @@ const getRandomColorClass = () => {
   return TEAM_COLORS[randomIndex];
 };
 
+const assignColorsToTeams = (teams: ITeamBase[]): ITeam[] => {
+  return teams.map((team) => ({
+    ...team,
+    colorClass: getRandomColorClass(),
+  }));
+};
+
 const LeaderboardPage = () => {
-  const gameName = useAtomValue(gameNameAtom);
+  const [gameName] = useAtomValue(gameNameAtom);
+  const [teams, setTeams] = useAtom(teamsAtom);
   const navigate = useNavigate();
-  const teams: Omit<ITeam, "colorClass">[] = [
-    { id: 1, name: "React Masters", score: 1200 },
-    { id: 2, name: "TypeScript Ninjas", score: 950 },
-    { id: 3, name: "Node.js Wizards", score: 800 },
-    { id: 4, name: "Vue Legends", score: 750 },
-    { id: 5, name: "Angular Heroes", score: 600 },
-  ];
 
-  const fetchTeams = async () => {
-    const response = await instance.get(`team_service/teams/game/${gameName}`);
-    return response.data.map((team: Omit<ITeam, "colorClass">) => ({
-      ...team,
-      colorClass: getRandomColorClass(),
-    }));
-  };
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        // Получаем команды без цветов
+        const response = await instance.get(
+          `/teams?game=${encodeURIComponent(gameName)}`,
+        );
+        const teamsWithoutColors: ITeamBase[] = response.data;
 
-  const { data } = useQuery({
-    queryKey: ["teams"],
-    queryFn: fetchTeams,
-    initialData: teams,
-  });
+        // Добавляем цвета
+        const teamsWithColors = assignColorsToTeams(teamsWithoutColors);
+
+        setTeams(teamsWithColors);
+        console.log("Команды получены и цвета назначены:", teamsWithColors);
+      } catch (error) {
+        console.error("Ошибка при получении команд:", error);
+
+        // Если нет команд, создаем дефолтные
+        if (teams.length === 0) {
+          const defaultTeams = assignColorsToTeams([
+            { id: 1, name: "Masters", score: 1200 },
+            { id: 2, name: "Ninjas", score: 950 },
+            { id: 3, name: "Wizards", score: 800 },
+            { id: 4, name: "Legends", score: 750 },
+            { id: 5, name: "Heroes", score: 600 },
+          ]);
+          setTeams(defaultTeams);
+        }
+      }
+    };
+
+    fetchTeams();
+  }, [gameName, setTeams, teams.length]);
 
   const handleBackToGame = () => {
     navigate("/game");
   };
 
-  const sortedTeams = [...(data || [])].sort((a, b) => b.score - a.score);
+  const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
 
   return (
     <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-gray-900">
@@ -85,43 +106,51 @@ const LeaderboardPage = () => {
               <div className="col-span-4 text-right">Очки</div>
             </div>
 
-            <div className="space-y-3">
-              {sortedTeams.map((team, index) => (
-                <motion.div
-                  key={team.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                  className={clsx(
-                    "grid grid-cols-12 items-center gap-2 rounded-lg p-4 backdrop-blur-sm",
-                    index % 2 === 0 ? "bg-gray-800/80" : "bg-gray-800/60",
-                  )}
-                >
-                  <div
+            {sortedTeams.length > 0 ? (
+              <div className="space-y-3">
+                {sortedTeams.map((team, index) => (
+                  <motion.div
+                    key={team.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 * index }}
                     className={clsx(
-                      "col-span-1 font-mono font-bold",
-                      index < 3 ? "text-yellow-400" : "text-green-400",
+                      "grid grid-cols-12 items-center gap-2 rounded-lg p-4 backdrop-blur-sm",
+                      index % 2 === 0 ? "bg-gray-800/80" : "bg-gray-800/60",
                     )}
                   >
-                    {index + 1}
-                  </div>
-                  <div className="col-span-7 flex items-center">
                     <div
-                      className={`mr-3 h-3 w-3 rounded-full ${team.colorClass}`}
-                    />
-                    <span className="font-mono text-gray-100">{team.name}</span>
-                  </div>
-                  <div
-                    className={clsx(
-                      "col-span-4 text-right font-mono font-bold",
-                      index < 3 ? "text-yellow-400" : "text-green-400",
-                    )}
-                  >
-                    {team.score}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                      className={clsx(
+                        "col-span-1 font-mono font-bold",
+                        index < 3 ? "text-green-400" : "text-yellow-400",
+                      )}
+                    >
+                      {index + 1}
+                    </div>
+                    <div className="col-span-7 flex items-center">
+                      <div
+                        className={`mr-3 h-3 w-3 rounded-full ${team.colorClass}`}
+                      />
+                      <span className="font-mono text-gray-100">
+                        {team.name}
+                      </span>
+                    </div>
+                    <div
+                      className={clsx(
+                        "col-span-4 text-right font-mono font-bold",
+                        index < 3 ? "text-green-400" : "text-yellow-400",
+                      )}
+                    >
+                      {team.score}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center font-mono text-gray-300">
+                Нет данных о командах
+              </div>
+            )}
           </motion.div>
 
           <motion.div
