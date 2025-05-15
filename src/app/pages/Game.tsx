@@ -8,34 +8,15 @@ import clsx from "clsx";
 import { gameSetupAtom } from "../stores/gameStore";
 import { useNavigate } from "react-router-dom";
 import { instance } from "../../api/instance";
-
-type Question = {
-  id: number;
-  text: string;
-  price: number;
-  answer: string;
-  is_answered: boolean;
-};
-
-type Category = {
-  id: number;
-  name: string;
-  questions: Question[];
-};
-
-type Team = {
-  id: number;
-  name: string;
-  game_id: number;
-  score: number;
-  created_at: string;
-  updated_at: string | null;
-};
+import { ITeam } from "../../types/ITeam";
+import { IQuestion } from "../../types/IQuestion";
+import { ICategory } from "../../types/ICategory";
 
 const Game = () => {
   const [gameSetup, setGameSetup] = useAtom(gameSetupAtom);
+  const [teams, setTeams] = useState<ITeam[]>([]);
   const navigate = useNavigate();
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
+  const [selectedQuestion, setSelectedQuestion] = useState<IQuestion | null>(
     null,
   );
   const [showAnswer, setShowAnswer] = useState(false);
@@ -45,13 +26,15 @@ const Game = () => {
   const fetchTeams = async () => {
     if (!gameSetup.gameId) return;
     try {
-      const response = await instance.get<Team[]>(
-        `team_service/teams/${gameSetup.gameId}`,
+      const response = await instance.get(
+        `team_service/teams/game/${gameSetup.gameId}`,
       );
+      setTeams(response.data);
       setGameSetup((prev) => ({
         ...prev,
         teams: response.data,
       }));
+      console.log(response.data)
     } catch (error) {
       console.error("Error fetching teams:", error);
     }
@@ -62,15 +45,14 @@ const Game = () => {
 
     try {
       setIsLoading(true);
-      await fetchTeams();
 
-      const categoriesResponse = await instance.get<Category[]>(
+      const categoriesResponse = await instance.get<ICategory[]>(
         `board_service/categories/game/${gameSetup.gameId}`,
       );
 
       const categoriesWithQuestions = await Promise.all(
         categoriesResponse.data.map(async (category) => {
-          const questionsResponse = await instance.get<Question[]>(
+          const questionsResponse = await instance.get<IQuestion[]>(
             `board_service/questions/category/${category.id}`,
           );
           return {
@@ -98,7 +80,7 @@ const Game = () => {
     await fetchCategoriesAndQuestions();
   };
 
-  const handleQuestionClick = (question: Question) => {
+  const handleQuestionClick = (question: IQuestion) => {
     if (question.is_answered) return;
     setSelectedQuestion(question);
     setShowAnswer(false);
@@ -106,6 +88,7 @@ const Game = () => {
   };
 
   const revealAnswer = async () => {
+    await fetchTeams();
     if (!selectedQuestion) return;
 
     try {
@@ -122,64 +105,58 @@ const Game = () => {
     }
   };
 
-const awardPointsToTeam = async (teamId: number) => {
-  console.log("Awarding points to team with id:", teamId); // Добавьте для отладки
-  if (!selectedQuestion) return;
+  const awardPointsToTeam = async (teamId: number) => {
+    if (!selectedQuestion) return;
 
-  try {
-    setIsLoading(true);
+    try {
+      setIsLoading(true);
 
-    // 1. Помечаем вопрос как отвеченный
-    await instance.patch(`board_service/questions/${selectedQuestion.id}`, {
-      is_answered: true,
-    });
+      // Начисляем баллы команде
+      await instance.post("team_service/scores", {
+        team_id: teamId,
+        question_id: selectedQuestion.id,
+        points: selectedQuestion.price,
+      });
 
-    // 2. Начисляем баллы команде
-    await instance.post("team_service/scores", {
-      team_id: teamId,
-      question_id: selectedQuestion.id,
-      points: selectedQuestion.price,
-    });
+      // Обновляем локальное состояние
+      setGameSetup((prev) => {
+        const updatedTeams = prev.teams?.map((team) =>
+          team.id === teamId
+            ? { ...team, score: (team.score || 0) + selectedQuestion.price }
+            : team
+        );
 
-    // 3. Обновляем локальное состояние
-    setGameSetup((prev) => {
-      const updatedTeams = prev.teams?.map((team) =>
-        team.id === teamId
-          ? { ...team, score: (team.score || 0) + selectedQuestion.price }
-          : team
+        const updatedCategories = prev.categories?.map((category) => ({
+          ...category,
+          questions: category.questions.map((q: IQuestion) =>
+            q.id === selectedQuestion.id ? { ...q, is_answered: true } : q
+          ),
+        }));
+
+        return {
+          ...prev,
+          teams: updatedTeams || [],
+          categories: updatedCategories || [],
+        };
+      });
+
+      // Обновляем локальное состояние teams
+      setTeams((prevTeams) =>
+        prevTeams.map((team) =>
+          team.id === teamId
+            ? { ...team, score: (team.score || 0) + selectedQuestion.price }
+            : team
+        )
       );
 
-      const updatedCategories = prev.categories?.map((category) => ({
-        ...category,
-        questions: category.questions.map((q) =>
-          q.id === selectedQuestion.id ? { ...q, is_answered: true } : q
-        ),
-      }));
-
-      return {
-        ...prev,
-        teams: updatedTeams || [],
-        categories: updatedCategories || [],
-      };
-    });
-
-    // Также обновляем локальное состояние teams
-    setTeams((prevTeams) =>
-      prevTeams.map((team) =>
-        team.id === teamId
-          ? { ...team, score: (team.score || 0) + selectedQuestion.price }
-          : team
-      )
-    );
-
-    setSelectedQuestion(null);
-    setShowAnswer(false);
-  } catch (error) {
-    console.error("Error awarding points:", error);
-  } finally {
-    setIsLoading(false);
-  }
-};
+      setSelectedQuestion(null);
+      setShowAnswer(false);
+    } catch (error) {
+      console.error("Error awarding points:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLeaderboard = () => {
     navigate("/leaderboard");
@@ -188,7 +165,7 @@ const awardPointsToTeam = async (teamId: number) => {
   return (
     <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-gray-900">
       <BackgroundCode />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,255,0,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,255,0,0.03)_1px)] bg-[size:20px_20px]"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,255,0,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,255,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
 
       <div className="relative z-10 w-full max-w-6xl px-4">
         <Header name={gameSetup.gameName || "Своя игра"} />
@@ -243,7 +220,7 @@ const awardPointsToTeam = async (teamId: number) => {
                         {category.name}
                       </div>
                       <div className="space-y-2">
-                        {category.questions.map((question) => (
+                        {category.questions.map((question: IQuestion) => (
                           <motion.div
                             key={question.id}
                             whileHover={{
@@ -311,7 +288,7 @@ const awardPointsToTeam = async (teamId: number) => {
                             Начислить баллы команде:
                           </h4>
                           <div className="grid grid-cols-3 gap-2">
-                            {gameSetup.teams.map((team) => (
+                            {teams.map((team) => (
                               <motion.div
                                 key={team.id}
                                 whileHover={{ scale: 1.05 }}
@@ -320,6 +297,9 @@ const awardPointsToTeam = async (teamId: number) => {
                                 className="cursor-pointer rounded-lg p-3 text-center font-mono font-bold text-gray-300 hover:bg-green-400/10"
                               >
                                 {team.name}
+                                <div className="text-sm text-green-400">
+                                  {team.score || 0} баллов
+                                </div>
                               </motion.div>
                             ))}
                           </div>

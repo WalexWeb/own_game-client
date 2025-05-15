@@ -94,7 +94,7 @@ const LeaderboardPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-900">
+      <div className="flex h-screen w-screen items-center justify-center bg-gray-900">
         <div className="font-mono text-green-400">Загрузка рейтинга...</div>
       </div>
     );
