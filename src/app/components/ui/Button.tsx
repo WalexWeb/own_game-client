@@ -9,7 +9,7 @@ type ButtonProps = {
 function Button({ onClick, children, disabled }: ButtonProps) {
   return (
     <motion.button
-      className="relative w-full cursor-pointer overflow-hidden rounded-lg bg-gradient-to-r from-green-600 to-cyan-600 px-6 py-4 font-mono text-lg text-white"
+      className="relative w-lg mb-6 cursor-pointer overflow-hidden rounded-lg bg-gradient-to-r from-green-600 to-cyan-600 px-6 py-4 font-mono text-lg text-white"
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}

@@ -1,152 +1,457 @@
 import { motion } from "framer-motion";
-import Categories from "./Categories/Categories";
 import Button from "../../components/ui/Button";
 import BackgroundCode from "../../components/ui/BackgroundCode";
 import Header from "../../components/layout/Header";
 import { useAtom } from "jotai";
-import { gameNameAtom } from "../../stores/gameStore";
+import { gameSetupAtom } from "../../stores/gameStore";
 import { instance } from "../../../api/instance";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
-interface ICategory {
-  name: string;
-  questions: {
-    text: string;
-    price: number;
-    answer: string;
-  }[];
-}
-
-const HomePage = () => {
+const Home = () => {
   const navigate = useNavigate();
+  const [setup, setSetup] = useAtom(gameSetupAtom);
+  const [currentValue, setCurrentValue] = useState("");
+  const [currentQuestion, setCurrentQuestion] = useState({
+    text: "",
+    price: 100,
+    answer: "",
+  });
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [currentGameId, setCurrentGameId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [gameName, setGameName] = useAtom(gameNameAtom);
-  const [currentGame, setCurrentGame] = useState(null);
-
-  const createNewGame = async () => {
+  const toCategoriesStep = () => {
+    setSetup((prev) => ({ ...prev, step: "categories" }));
+  };
+  const createNewGame = async (gameName: string) => {
     try {
+      setIsLoading(true);
       const gameResponse = await instance.post("/game_service/games", {
         name: gameName,
       });
-
-      setCurrentGame(gameResponse.data);
-      console.log(currentGame);
-
-      await createCategories(gameResponse.data.id);
-
-      navigate("/leaderboard");
+      setCurrentGameId(gameResponse.data.id);
+      setSetup((prev) => ({ ...prev, gameId: gameResponse.data.id }));
+      setIsLoading(false);
+      console.log(gameResponse.data);
+      return gameResponse.data.id;
     } catch (error) {
       console.error("Error creating new game:", error);
+      setIsLoading(false);
+      throw error;
     }
   };
 
-  const createCategories = async (gameId: number) => {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    const categories: Array<ICategory> = [];
-
-    for (const category of categories) {
+  const addCategory = async () => {
+    if (currentValue.trim() && currentGameId) {
       try {
+        setIsLoading(true);
         const categoryResponse = await instance.post(
-          `board_service/categories`,
+          "/board_service/categories",
           {
-            name: category.name,
-            game_id: gameId,
+            name: currentValue,
+            game_id: currentGameId,
           },
         );
 
-        for (const question of category.questions) {
-          try {
-            await instance.post(`board_service/questions`, {
-              text: question.text,
-              price: question.price,
-              answer: question.answer,
-              category_id: categoryResponse.data.id,
-            });
-          } catch (error) {
-            console.error(
-              `Ошибка при создании вопроса "${question.text}":`,
-              error,
-            );
-          }
-        }
+        setSetup((prev) => {
+          const currentCategories = Array.isArray(prev.categories)
+            ? prev.categories
+            : [];
+
+          return {
+            ...prev,
+            categories: [
+              ...currentCategories,
+              {
+                id: categoryResponse.data.id,
+                name: currentValue,
+                questions: [],
+              },
+            ],
+          };
+        });
+        setCurrentValue("");
+        console.log(categoryResponse);
       } catch (error) {
-        console.error(`Ошибка при создании категории ${category.name}:`, error);
+        console.error("Error adding category:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
   };
 
+  const addQuestion = async () => {
+    if (
+      selectedCategory !== null &&
+      currentQuestion.text.trim() &&
+      setup.categories[selectedCategory]?.id
+    ) {
+      try {
+        setIsLoading(true);
+        const questionResponse = await instance.post(
+          "/board_service/questions",
+          {
+            text: currentQuestion.text,
+            price: currentQuestion.price,
+            answer: currentQuestion.answer,
+            category_id: setup.categories[selectedCategory].id,
+          },
+        );
+
+        setSetup((prev) => {
+          const updatedCategories = [...prev.categories];
+          updatedCategories[selectedCategory].questions.push({
+            id: questionResponse.data.id,
+            text: currentQuestion.text,
+            price: currentQuestion.price,
+            answer: currentQuestion.answer,
+          });
+          return { ...prev, categories: updatedCategories };
+        });
+        setCurrentQuestion({ text: "", price: 100, answer: "" });
+        console.log(currentQuestion);
+      } catch (error) {
+        console.error("Error adding question:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const toTeamsStep = () => {
+    setSetup((prev) => ({ ...prev, step: "teams" }));
+    setCurrentValue("");
+  };
+
+  const addTeam = async () => {
+    if (currentValue.trim() && currentGameId) {
+      try {
+        setIsLoading(true);
+        const teamResponse = await instance.post("/team_service/teams", {
+          name: currentValue,
+          game_id: currentGameId,
+          score: 0,
+        });
+
+        setSetup((prev) => {
+          const currentTeams = Array.isArray(prev.teams) ? prev.teams : [];
+          return {
+            ...prev,
+            teams: [
+              ...currentTeams,
+              {
+                name: currentValue,
+                score: 0,
+              },
+            ],
+          };
+        });
+        setCurrentValue("");
+        console.log(teamResponse.data);
+      } catch (error) {
+        console.error("Error adding team:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const toReviewStep = () => {
+    setSetup((prev) => ({ ...prev, step: "review" }));
+  };
+
+  const completeSetup = async () => {
+    try {
+      setIsLoading(true);
+      navigate("/start");
+    } catch (error) {
+      console.error("Error completing setup:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStartGame = async () => {
+    try {
+      const gameId = await createNewGame(setup.gameName);
+      if (gameId) {
+        toCategoriesStep();
+      }
+    } catch (error) {
+      console.error("Failed to start game creation:", error);
+    }
+  };
+
   return (
-    <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-gray-900">
+    <div className="relative flex h-screen w-screen items-center justify-center overflow-auto bg-gray-900">
       <BackgroundCode />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,255,0,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,255,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
 
-      <div className="relative z-10 w-full max-w-4xl px-4">
-        <Header name="Своя игра" />
+      <div className="relative z-10 w-full px-4">
+        <Header name="Создание игры" />
 
-        <main className="flex flex-col items-center">
+        {/* Название игры */}
+        {setup.step === "gameName" && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="mb-12 text-center"
+            className="flex flex-col items-center"
           >
-            <motion.h2
-              className="mb-4 font-mono text-3xl font-bold text-green-400 md:text-4xl"
-              animate={{
-                scale: [1, 1.02, 1],
-              }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-              }}
-            >
-              Проверь свои знания
+            <motion.h2 className="mb-8 font-mono text-3xl font-bold text-green-400">
+              Введите название игры
             </motion.h2>
-            <p className="mx-auto max-w-md font-mono text-gray-300">
-              IT-викторина для настоящих профессионалов
-            </p>
+            <input
+              type="text"
+              value={setup.gameName}
+              onChange={(e) =>
+                setSetup((prev) => ({ ...prev, gameName: e.target.value }))
+              }
+              className="mb-6 w-lg rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+              placeholder="Название игры"
+            />
+            <Button
+              onClick={handleStartGame}
+              disabled={!setup.gameName.trim() || isLoading}
+            >
+              {isLoading ? "Создание..." : "Продолжить"}
+            </Button>
           </motion.div>
-
+        )}
+        {isLoading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="font-mono text-green-400">Загрузка...</div>
+          </div>
+        )}
+        {/* Категории и вопросы */}
+        {setup.step === "categories" && (
           <motion.div
-            className="mb-12 w-full max-w-md"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center"
           >
-            <motion.div className="relative mb-6">
-              <div className="absolute -inset-0.5 rounded-lg bg-green-500 opacity-75 blur transition group-hover:opacity-100"></div>
-              <input
-                type="text"
-                placeholder="Введите название"
-                onChange={(e) => setGameName(e.target.value)}
-                className="relative w-full rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
-              />
-            </motion.div>
+            <motion.h2 className="mb-8 font-mono text-3xl font-bold text-green-400">
+              Добавьте категории и вопросы
+            </motion.h2>
 
-            <Button onClick={createNewGame}>Начать игру</Button>
+            <div className="mb-6 w-lg space-y-4">
+              <div>
+                <h3 className="mb-2 font-mono text-xl text-green-400">
+                  Категории
+                </h3>
+                <input
+                  type="text"
+                  value={currentValue}
+                  onChange={(e) => setCurrentValue(e.target.value)}
+                  placeholder="Название категории"
+                  className="mb-6 w-lg rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+                />
+                <Button onClick={addCategory} disabled={!currentValue.trim()}>
+                  Добавить
+                </Button>
+              </div>
+
+              {setup.categories.length > 0 && (
+                <div>
+                  <h3 className="mb-2 font-mono text-xl text-green-400">
+                    Вопросы
+                  </h3>
+                  <select
+                    onChange={(e) =>
+                      setSelectedCategory(Number(e.target.value))
+                    }
+                    className="mb-2 w-full rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+                  >
+                    <option value="">Выберите категорию</option>
+                    {setup.categories.map((cat, index) => (
+                      <option key={index} value={index}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {selectedCategory !== null && (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={currentQuestion.text}
+                        onChange={(e) =>
+                          setCurrentQuestion((prev) => ({
+                            ...prev,
+                            text: e.target.value,
+                          }))
+                        }
+                        placeholder="Текст вопроса"
+                        className="w-full rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+                      />
+                      <input
+                        type="number"
+                        value={currentQuestion.price}
+                        onChange={(e) =>
+                          setCurrentQuestion((prev) => ({
+                            ...prev,
+                            price: Number(e.target.value),
+                          }))
+                        }
+                        placeholder="Стоимость"
+                        className="w-full rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={currentQuestion.answer}
+                        onChange={(e) =>
+                          setCurrentQuestion((prev) => ({
+                            ...prev,
+                            answer: e.target.value,
+                          }))
+                        }
+                        placeholder="Ответ"
+                        className="w-full rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+                      />
+                      <Button
+                        onClick={addQuestion}
+                        disabled={!currentQuestion.text.trim()}
+                      >
+                        Добавить вопрос
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+              <Button
+                onClick={toTeamsStep}
+                disabled={setup.categories.length === 0}
+              >
+                Перейти к командам
+              </Button>
+              <Button
+                onClick={() =>
+                  setSetup((prev) => ({ ...prev, step: "gameName" }))
+                }
+              >
+                Назад
+              </Button>
+            </div>
           </motion.div>
+        )}
 
-          <Categories />
-        </main>
+        {/* Команды */}
+        {setup.step === "teams" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center"
+          >
+            <motion.h2 className="mb-8 font-mono text-3xl font-bold text-green-400">
+              Добавьте команды
+            </motion.h2>
+
+            <input
+              type="text"
+              value={currentValue}
+              onChange={(e) => setCurrentValue(e.target.value)}
+              placeholder="Название команды"
+              className="mb-6 w-lg rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+            />
+            <Button onClick={addTeam} disabled={!currentValue.trim()}>
+              Добавить
+            </Button>
+
+            {setup.teams?.length > 0 && (
+              <div>
+                <h3 className="font-mono text-xl text-green-400">
+                  Добавленные команды:
+                </h3>
+                <ul className="mb-6 space-y-2">
+                  {setup.teams.map((team, index) => (
+                    <li key={index} className="font-mono text-gray-300">
+                      {team.name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <Button
+              onClick={toReviewStep}
+              disabled={!setup.teams || setup.teams.length === 0}
+            >
+              Просмотр и завершение
+            </Button>
+            <Button
+              onClick={() =>
+                setSetup((prev) => ({ ...prev, step: "categories" }))
+              }
+            >
+              Назад
+            </Button>
+          </motion.div>
+        )}
+
+        {/* Просмотр и завершение */}
+        {setup.step === "review" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center"
+          >
+            <motion.h2 className="mb-8 font-mono text-3xl font-bold text-green-400">
+              Проверьте данные
+            </motion.h2>
+
+            <div className="mb-8 w-full max-w-md space-y-6">
+              <div>
+                <h3 className="mb-2 font-mono text-xl text-green-400">Игра:</h3>
+                <p className="font-mono text-gray-300">{setup.gameName}</p>
+              </div>
+
+              <div>
+                <h3 className="mb-2 font-mono text-xl text-green-400">
+                  Категории:
+                </h3>
+                <ul className="space-y-2">
+                  {setup.categories.map((cat, index) => (
+                    <li key={index} className="font-mono text-gray-300">
+                      <span className="font-bold">{cat.name}</span> (
+                      {cat.questions.length} вопросов)
+                      <ul className="mt-1 ml-4 space-y-1">
+                        {cat.questions.map((q, qIndex) => (
+                          <li key={qIndex} className="text-sm">
+                            {q.price} баллов: {q.text}
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="mb-2 font-mono text-xl text-green-400">
+                  Команды:
+                </h3>
+                <ul className="space-y-2">
+                  {setup.teams.map((team, index) => (
+                    <li key={index} className="font-mono text-gray-300">
+                      {team.name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Button
+                onClick={() => setSetup((prev) => ({ ...prev, step: "teams" }))}
+              >
+                Назад
+              </Button>
+              <Button onClick={completeSetup}>Создать игру</Button>
+            </div>
+          </motion.div>
+        )}
       </div>
-
-      {/* Пасхалка | версия */}
-      <motion.div
-        className="absolute bottom-8 left-8 font-mono text-sm text-green-400/50"
-        animate={{
-          opacity: [0.5, 0.9, 0.5],
-        }}
-        transition={{
-          duration: 5,
-          repeat: Infinity,
-        }}
-      >
-        v1.0.0 [ready]
-      </motion.div>
     </div>
   );
 };
 
-export default HomePage;
+export default Home;

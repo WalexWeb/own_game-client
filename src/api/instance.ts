@@ -1,6 +1,6 @@
 import axios from "axios";
 
 export const instance = axios.create({
-  baseURL: "http://localhost:8000/api/v1",
+  baseURL: "https://9e46-83-217-9-201.ngrok-free.app/api/v1/",
   withCredentials: false,
 });

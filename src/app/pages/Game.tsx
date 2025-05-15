@@ -3,202 +3,183 @@ import Button from "../components/ui/Button";
 import BackgroundCode from "../components/ui/BackgroundCode";
 import Header from "../components/layout/Header";
 import { useAtom } from "jotai";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import clsx from "clsx";
-import {
-  categoriesAtom,
-  gameNameAtom,
-  startTextAtom,
-  teamsAtom,
-} from "../stores/gameStore";
+import { gameSetupAtom } from "../stores/gameStore";
 import { useNavigate } from "react-router-dom";
+import { instance } from "../../api/instance";
 
-interface IQuestion {
+type Question = {
   id: number;
   text: string;
   price: number;
   answer: string;
-  isAnswered: boolean;
-}
+  is_answered: boolean;
+};
 
-interface ICategory {
+type Category = {
   id: number;
   name: string;
-  questions: IQuestion[];
-}
+  questions: Question[];
+};
+
+type Team = {
+  id: number;
+  name: string;
+  game_id: number;
+  score: number;
+  created_at: string;
+  updated_at: string | null;
+};
 
 const Game = () => {
-  const [gameName] = useAtom(gameNameAtom);
-  const [teams, setTeams] = useAtom(teamsAtom);
+  const [gameSetup, setGameSetup] = useAtom(gameSetupAtom);
   const navigate = useNavigate();
-  const [categories, setCategories] = useAtom(categoriesAtom);
-  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
-  const [selectedQuestion, setSelectedQuestion] = useState<IQuestion | null>(
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
     null,
   );
   const [showAnswer, setShowAnswer] = useState(false);
-  const [showStartText, setShowStartText] = useAtom(startTextAtom);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentAnswer, setCurrentAnswer] = useState("");
 
-  const demoCategories: ICategory[] = [
-    {
-      id: 1,
-      name: "История",
-      questions: [
-        {
-          id: 1,
-          text: "Кто создал первый компьютер?",
-          price: 100,
-          answer: "test",
-          isAnswered: false,
-        },
-        {
-          id: 2,
-          text: "Как работает event loop?",
-          price: 200,
-          answer: "test",
-          isAnswered: false,
-        },
-        {
-          id: 3,
-          text: "Разница между let, const и var?",
-          price: 300,
-          answer: "test",
-          isAnswered: false,
-        },
-      ],
-    },
-    {
-      id: 2,
-      name: "Люди",
-      questions: [
-        {
-          id: 4,
-          text: "Что такое Virtual DOM?",
-          price: 100,
-          answer: "test",
-          isAnswered: false,
-        },
-        {
-          id: 5,
-          text: "Как работает useEffect?",
-          price: 200,
-          answer: "test",
-          isAnswered: false,
-        },
-        {
-          id: 6,
-          text: "Разница между useState и useReducer?",
-          price: 300,
-          answer: "test",
-          isAnswered: false,
-        },
-      ],
-    },
-    {
-      id: 3,
-      name: "Технологии",
-      questions: [
-        {
-          id: 7,
-          text: "Что такое дженерики?",
-          price: 100,
-          answer: "test",
-          isAnswered: false,
-        },
-        {
-          id: 8,
-          text: "Для чего нужен never тип?",
-          price: 200,
-          answer: "test",
-          isAnswered: false,
-        },
-        {
-          id: 9,
-          text: "Как работает type inference?",
-          price: 300,
-          answer: "test",
-          isAnswered: false,
-        },
-      ],
-    },
-    {
-      id: 4,
-      name: "Интересные факты",
-      questions: [
-        {
-          id: 10,
-          text: "Что такое дженерики?",
-          price: 100,
-          answer: "test",
-          isAnswered: false,
-        },
-        {
-          id: 11,
-          text: "Для чего нужен never тип?",
-          price: 200,
-          answer: "test",
-          isAnswered: false,
-        },
-        {
-          id: 12,
-          text: "Как работает type inference?",
-          price: 300,
-          answer: "test",
-          isAnswered: false,
-        },
-      ],
-    },
-  ];
-
-  useEffect(() => {
-    if (categories.length > 0) {
-      setShowStartText(false);
+  const fetchTeams = async () => {
+    if (!gameSetup.gameId) return;
+    try {
+      const response = await instance.get<Team[]>(
+        `team_service/teams/${gameSetup.gameId}`,
+      );
+      setGameSetup((prev) => ({
+        ...prev,
+        teams: response.data,
+      }));
+    } catch (error) {
+      console.error("Error fetching teams:", error);
     }
-  }, [categories, setShowStartText]);
-
-  const startGame = () => {
-    setCategories(demoCategories);
-    setShowStartText(false);
   };
 
-  const handleQuestionClick = (question: IQuestion) => {
-    if (question.isAnswered) return;
+  const fetchCategoriesAndQuestions = async () => {
+    if (!gameSetup.gameId) return;
+
+    try {
+      setIsLoading(true);
+      await fetchTeams();
+
+      const categoriesResponse = await instance.get<Category[]>(
+        `board_service/categories/game/${gameSetup.gameId}`,
+      );
+
+      const categoriesWithQuestions = await Promise.all(
+        categoriesResponse.data.map(async (category) => {
+          const questionsResponse = await instance.get<Question[]>(
+            `board_service/questions/category/${category.id}`,
+          );
+          return {
+            ...category,
+            questions: questionsResponse.data.map((q) => ({
+              ...q,
+              is_answered: q.is_answered || false,
+            })),
+          };
+        }),
+      );
+
+      setGameSetup((prev) => ({
+        ...prev,
+        categories: categoriesWithQuestions,
+      }));
+    } catch (error) {
+      console.error("Error fetching game data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startGame = async () => {
+    await fetchCategoriesAndQuestions();
+  };
+
+  const handleQuestionClick = (question: Question) => {
+    if (question.is_answered) return;
     setSelectedQuestion(question);
     setShowAnswer(false);
-    setSelectedTeamId(null);
+    setCurrentAnswer("");
   };
 
-  const revealAnswer = () => {
-    setShowAnswer(true);
+  const revealAnswer = async () => {
+    if (!selectedQuestion) return;
+
+    try {
+      setIsLoading(true);
+      const response = await instance.get(
+        `board_service/questions/${selectedQuestion.id}/answer`,
+      );
+      setCurrentAnswer(response.data.answer);
+      setShowAnswer(true);
+    } catch (error) {
+      console.error("Error fetching answer:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const markAsAnswered = () => {
-    if (!selectedQuestion || !selectedTeamId) return;
+const awardPointsToTeam = async (teamId: number) => {
+  console.log("Awarding points to team with id:", teamId); // Добавьте для отладки
+  if (!selectedQuestion) return;
 
-    // 1. Обновляем счет команды
-    setTeams((prevTeams) =>
-      prevTeams.map((team) =>
-        team.id === selectedTeamId
-          ? { ...team, score: team.score + selectedQuestion.price }
-          : team,
-      ),
-    );
+  try {
+    setIsLoading(true);
 
-    // 2. Помечаем вопрос как отвеченный
-    setCategories((prevCategories) =>
-      prevCategories.map((category) => ({
+    // 1. Помечаем вопрос как отвеченный
+    await instance.patch(`board_service/questions/${selectedQuestion.id}`, {
+      is_answered: true,
+    });
+
+    // 2. Начисляем баллы команде
+    await instance.post("team_service/score", {
+      team_id: teamId,
+      question_id: selectedQuestion.id,
+      points: selectedQuestion.price,
+    });
+
+    // 3. Обновляем локальное состояние
+    setGameSetup((prev) => {
+      const updatedTeams = prev.teams?.map((team) =>
+        team.id === teamId
+          ? { ...team, score: (team.score || 0) + selectedQuestion.price }
+          : team
+      );
+
+      const updatedCategories = prev.categories?.map((category) => ({
         ...category,
         questions: category.questions.map((q) =>
-          q.id === selectedQuestion.id ? { ...q, isAnswered: true } : q,
+          q.id === selectedQuestion.id ? { ...q, is_answered: true } : q
         ),
-      })),
+      }));
+
+      return {
+        ...prev,
+        teams: updatedTeams || [],
+        categories: updatedCategories || [],
+      };
+    });
+
+    // Также обновляем локальное состояние teams
+    setTeams((prevTeams) =>
+      prevTeams.map((team) =>
+        team.id === teamId
+          ? { ...team, score: (team.score || 0) + selectedQuestion.price }
+          : team
+      )
     );
 
-    // 3. Сбрасываем выбранные значения
     setSelectedQuestion(null);
-    setSelectedTeamId(null);
     setShowAnswer(false);
-  };
+  } catch (error) {
+    console.error("Error awarding points:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleLeaderboard = () => {
     navigate("/leaderboard");
@@ -207,12 +188,18 @@ const Game = () => {
   return (
     <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-gray-900">
       <BackgroundCode />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,255,0,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,255,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,255,0,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,255,0,0.03)_1px)] bg-[size:20px_20px]"></div>
 
       <div className="relative z-10 w-full max-w-6xl px-4">
-        <Header name={gameName || "Своя игра"} />
+        <Header name={gameSetup.gameName || "Своя игра"} />
 
-        {showStartText ? (
+        {isLoading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="font-mono text-green-400">Загрузка...</div>
+          </div>
+        )}
+
+        {gameSetup.step === "gameName" ? (
           <main className="flex flex-col items-center">
             <motion.div
               initial={{ opacity: 0 }}
@@ -247,10 +234,10 @@ const Game = () => {
           </main>
         ) : (
           <div className="mt-8">
-            {categories.length > 0 ? (
+            {gameSetup.categories.length > 0 ? (
               <>
                 <div className="gird-rows-2 grid grid-cols-2 gap-4">
-                  {categories.map((category) => (
+                  {gameSetup.categories.map((category) => (
                     <div key={category.id} className="flex flex-col">
                       <div className="mb-2 rounded-lg bg-green-500/20 p-3 text-center font-mono font-bold text-green-400">
                         {category.name}
@@ -260,17 +247,19 @@ const Game = () => {
                           <motion.div
                             key={question.id}
                             whileHover={{
-                              scale: question.isAnswered ? 1 : 1.05,
+                              scale: question.is_answered ? 1 : 1.05,
                             }}
-                            whileTap={{ scale: question.isAnswered ? 1 : 0.95 }}
+                            whileTap={{
+                              scale: question.is_answered ? 1 : 0.95,
+                            }}
                             onClick={() => handleQuestionClick(question)}
                             className={`cursor-pointer rounded-lg p-4 text-center font-mono font-bold transition ${
-                              question.isAnswered
+                              question.is_answered
                                 ? "bg-gray-700 text-gray-500"
                                 : "bg-gray-800 text-green-400 hover:bg-green-400/10"
                             }`}
                           >
-                            {question.isAnswered ? "---" : question.price}
+                            {question.is_answered ? "---" : question.price}
                           </motion.div>
                         ))}
                       </div>
@@ -297,7 +286,6 @@ const Game = () => {
               </div>
             )}
 
-            {/* Модальное окно с вопросом */}
             {selectedQuestion && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
                 <div className="relative w-full max-w-2xl rounded-lg bg-gray-800 p-8 shadow-xl">
@@ -315,28 +303,21 @@ const Game = () => {
                           Ответ:
                         </h4>
                         <p className="font-mono text-gray-100">
-                          {selectedQuestion.answer}
+                          {currentAnswer || selectedQuestion.answer}
                         </p>
 
-                        {/* Выбор команды для начисления баллов */}
                         <div className="mt-4">
                           <h4 className="mb-2 font-mono font-bold text-green-400">
                             Начислить баллы команде:
                           </h4>
                           <div className="grid grid-cols-3 gap-2">
-                            {teams.map((team) => (
+                            {gameSetup.teams.map((team) => (
                               <motion.div
                                 key={team.id}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => setSelectedTeamId(team.id)}
-                                className={clsx(
-                                  "cursor-pointer rounded-lg p-3 text-center font-mono font-bold transition",
-                                  selectedTeamId === team.id
-                                    ? "ring-2 ring-green-400"
-                                    : "",
-                                  team.colorClass,
-                                )}
+                                onClick={() => awardPointsToTeam(team.id)}
+                                className="cursor-pointer rounded-lg p-3 text-center font-mono font-bold text-gray-300 hover:bg-green-400/10"
                               >
                                 {team.name}
                               </motion.div>
@@ -344,21 +325,17 @@ const Game = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex justify-end space-x-4">
+                      <div className="flex justify-center">
                         <Button onClick={() => setSelectedQuestion(null)}>
                           Закрыть
-                        </Button>
-                        <Button
-                          onClick={markAsAnswered}
-                          disabled={!selectedTeamId}
-                        >
-                          Подтвердить
                         </Button>
                       </div>
                     </>
                   ) : (
-                    <div className="flex justify-end">
-                      <Button onClick={revealAnswer}>Показать ответ</Button>
+                    <div className="flex justify-center">
+                      <Button onClick={revealAnswer} disabled={isLoading}>
+                        {isLoading ? "Загрузка..." : "Показать ответ"}
+                      </Button>
                     </div>
                   )}
                 </div>
