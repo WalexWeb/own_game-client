@@ -1,46 +1,113 @@
 import { motion } from "framer-motion";
-import { useAtom } from "jotai";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import clsx from "clsx";
 import BackgroundCode from "../components/ui/BackgroundCode";
 import Header from "../components/layout/Header";
-import { gameSetupAtom } from "../stores/gameStore";
 import Button from "../components/ui/Button";
-import { useEffect } from "react";
+import { instance } from "../../api/instance";
+import { gameSetupAtom } from "../stores/gameStore";
+import { useAtomValue } from "jotai";
 
-const TEAM_COLORS = [
-  "bg-blue-500",
-  "bg-purple-500",
-  "bg-green-500",
-  "bg-emerald-500",
-  "bg-red-500",
-  "bg-yellow-500",
-  "bg-indigo-500",
-  "bg-pink-500",
-  "bg-cyan-500",
-  "bg-amber-500",
-];
-
-const getRandomColorClass = () => {
-  const randomIndex = Math.floor(Math.random() * TEAM_COLORS.length);
-  return TEAM_COLORS[randomIndex];
-};
+interface ITeam {
+  id: number;
+  name: string;
+  score: number;
+}
 
 const LeaderboardPage = () => {
-  const [gameSetup] = useAtom(gameSetupAtom);
   const navigate = useNavigate();
+  const gameSetup = useAtomValue(gameSetupAtom);
+  const [teams, setTeams] = useState<ITeam[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Добавляем цвета командам если их нет
-  const teamsWithColors = gameSetup.teams.map((team) => ({
-    ...team,
-    colorClass: getRandomColorClass(),
-  }));
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        if (!gameSetup.gameId) {
+          throw new Error("Game ID is missing");
+        }
 
-  const sortedTeams = [...teamsWithColors].sort((a, b) => b.score - a.score);
+        console.log("Fetching teams for game:", gameSetup.gameId);
 
-  const handleBackToGame = () => {
-    navigate("/game");
-  };
+        const response = await instance.get(
+          `team_service/teams/game/${gameSetup.gameId}`,
+        );
+        console.log("Данные с сервера:", response);
+
+        if (!response.data) {
+          throw new Error("Empty response from server");
+        }
+
+        // Нормализация данных
+        let teamsData: ITeam[] = [];
+
+        // Вариант 1: Ответ - массив команд
+        if (Array.isArray(response.data)) {
+          teamsData = response.data;
+        }
+        // Вариант 2: Ответ - объект с полем teams
+        else if (response.data.teams && Array.isArray(response.data.teams)) {
+          teamsData = response.data.teams;
+        }
+        // Вариант 3: Ответ - объект с полем data (массив команд)
+        else if (response.data.data && Array.isArray(response.data.data)) {
+          teamsData = response.data.data;
+        }
+        // Вариант 4: Одиночная команда
+        else if (response.data.team && typeof response.data.team === "object") {
+          teamsData = [response.data.team];
+        }
+        // Неизвестный формат
+        else {
+          throw new Error("Unknown response format");
+        }
+
+        // Проверка и нормализация каждой команды
+        const normalizedTeams = teamsData.map((team) => ({
+          id: team?.id || 0,
+          name: team?.name || "Unknown Team",
+          score: team?.score || 0,
+        }));
+
+        if (normalizedTeams.length === 0) {
+          setError("No teams found");
+        } else {
+          setTeams(normalizedTeams);
+          setError(null);
+        }
+      } catch (err) {
+        console.error("Team fetch error:", err);
+        setTeams([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTeams();
+  }, [gameSetup.gameId]);
+
+  const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
+
+  const handleBackToGame = () => navigate("/game");
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-900">
+        <div className="font-mono text-green-400">Загрузка рейтинга...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center bg-gray-900">
+        <div className="mb-4 font-mono text-red-400">Ошибка: {error}</div>
+        <Button onClick={handleBackToGame}>Вернуться к игре</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-gray-900">
@@ -67,7 +134,7 @@ const LeaderboardPage = () => {
               <div className="space-y-3">
                 {sortedTeams.map((team, index) => (
                   <motion.div
-                    key={index}
+                    key={`${team.id}-${index}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 * index }}
@@ -85,9 +152,6 @@ const LeaderboardPage = () => {
                       {index + 1}
                     </div>
                     <div className="col-span-7 flex items-center">
-                      <div
-                        className={`mr-3 h-3 w-3 rounded-full ${team.colorClass}`}
-                      />
                       <span className="font-mono text-gray-100">
                         {team.name}
                       </span>
