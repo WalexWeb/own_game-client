@@ -288,7 +288,7 @@ const Game = () => {
                             Начислить баллы команде:
                           </h4>
                           <div className="grid grid-cols-3 gap-2">
-                            {teams.map((team) => (
+                            {teams.map((team: ITeam) => (
                               <motion.div
                                 key={team.id}
                                 whileHover={{ scale: 1.05 }}

@@ -180,7 +180,17 @@ const LeaderboardPage = () => {
             transition={{ delay: 0.8 }}
             className="mt-8"
           >
-            <Button onClick={handleBackToGame}>Вернуться к игре</Button>
+            <button
+              onClick={handleBackToGame}
+              className={clsx(
+                "cursor-pointer rounded-lg border-2 px-6 py-3 font-mono transition",
+                "border-green-400/50 bg-gray-800 text-green-400",
+                "hover:border-green-400 hover:bg-green-400/10",
+                "focus:ring-2 focus:ring-green-400/50 focus:outline-none",
+              )}
+            >
+              Вернуться к игре
+            </button>
           </motion.div>
         </main>
       </div>

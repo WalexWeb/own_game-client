@@ -102,7 +102,8 @@ const Home = () => {
         setSetup((prev) => {
           const updatedCategories = [...prev.categories];
           updatedCategories[selectedCategory].questions.push({
-            id: questionResponse.data.id,
+            // @ts-ignore
+            id: questionResponse.data.id, 
             text: currentQuestion.text,
             price: currentQuestion.price,
             answer: currentQuestion.answer,
@@ -134,7 +135,8 @@ const Home = () => {
           score: 0,
         });
 
-        setSetup((prev) => {
+        // @ts-ignore
+        setSetup((prev) => { 
           const currentTeams = Array.isArray(prev.teams) ? prev.teams : [];
           return {
             ...prev,
@@ -184,7 +186,7 @@ const Home = () => {
   };
 
   return (
-    <div className="relative flex h-screen w-screen items-center justify-center overflow-auto bg-gray-900">
+    <div className="relative h-screen w-screen items-center overflow-hidden justify-center bg-gray-900">
       <BackgroundCode />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,255,0,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,255,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
 
@@ -398,7 +400,7 @@ const Home = () => {
               Проверьте данные
             </motion.h2>
 
-            <div className="mb-8 w-full max-w-md space-y-6">
+            <div className="mb-8 grid w-screen max-w-md grid-cols-3 justify-center space-y-6 gap-x-96">
               <div>
                 <h3 className="mb-2 font-mono text-xl text-green-400">Игра:</h3>
                 <p className="font-mono text-gray-300">{setup.gameName}</p>
@@ -408,12 +410,12 @@ const Home = () => {
                 <h3 className="mb-2 font-mono text-xl text-green-400">
                   Категории:
                 </h3>
-                <ul className="space-y-2">
+                <ul className="grid grid-cols-3 justify-center gap-x-36">
                   {setup.categories.map((cat, index) => (
                     <li key={index} className="font-mono text-gray-300">
                       <span className="font-bold">{cat.name}</span> (
                       {cat.questions.length} вопросов)
-                      <ul className="mt-1 ml-4 space-y-1">
+                      <ul className="mt-1 ml-4">
                         {cat.questions.map((q, qIndex) => (
                           <li key={qIndex} className="text-sm">
                             {q.price} баллов: {q.text}
