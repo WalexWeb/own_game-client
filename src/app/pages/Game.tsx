@@ -135,7 +135,7 @@ const awardPointsToTeam = async (teamId: number) => {
     });
 
     // 2. Начисляем баллы команде
-    await instance.post("team_service/score", {
+    await instance.post("team_service/scores", {
       team_id: teamId,
       question_id: selectedQuestion.id,
       points: selectedQuestion.price,
