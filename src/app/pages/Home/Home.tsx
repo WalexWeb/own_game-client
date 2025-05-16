@@ -103,7 +103,7 @@ const Home = () => {
           const updatedCategories = [...prev.categories];
           updatedCategories[selectedCategory].questions.push({
             // @ts-ignore
-            id: questionResponse.data.id, 
+            id: questionResponse.data.id,
             text: currentQuestion.text,
             price: currentQuestion.price,
             answer: currentQuestion.answer,
@@ -136,7 +136,7 @@ const Home = () => {
         });
 
         // @ts-ignore
-        setSetup((prev) => { 
+        setSetup((prev) => {
           const currentTeams = Array.isArray(prev.teams) ? prev.teams : [];
           return {
             ...prev,
@@ -186,11 +186,11 @@ const Home = () => {
   };
 
   return (
-    <div className="relative h-screen w-screen items-center overflow-hidden justify-center bg-gray-900">
+    <div className="relative flex min-h-screen w-screen items-center justify-center overflow-auto bg-gray-900 md:h-screen">
       <BackgroundCode />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,255,0,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,255,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
 
-      <div className="relative z-10 w-full px-4">
+      <div className="relative z-10 w-full px-4 py-8 md:max-w-4xl lg:max-w-6xl">
         <Header name="Создание игры" />
 
         {/* Название игры */}
@@ -198,9 +198,9 @@ const Home = () => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center"
+            className="mx-auto flex w-full max-w-md flex-col items-center px-4"
           >
-            <motion.h2 className="mb-8 font-mono text-3xl font-bold text-green-400">
+            <motion.h2 className="mb-4 text-center font-mono text-2xl font-bold text-green-400 sm:text-3xl md:mb-8">
               Введите название игры
             </motion.h2>
             <input
@@ -209,7 +209,7 @@ const Home = () => {
               onChange={(e) =>
                 setSetup((prev) => ({ ...prev, gameName: e.target.value }))
               }
-              className="mb-6 w-lg rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+              className="mb-4 w-lg rounded-lg border-2 border-green-400/50 bg-gray-800 p-3 font-mono text-gray-100 focus:border-green-400 focus:outline-none sm:p-4 md:mb-6"
               placeholder="Название игры"
             />
             <Button
@@ -220,49 +220,53 @@ const Home = () => {
             </Button>
           </motion.div>
         )}
+
         {isLoading && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div className="font-mono text-green-400">Загрузка...</div>
           </div>
         )}
+
         {/* Категории и вопросы */}
         {setup.step === "categories" && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center"
+            className="mx-auto w-full px-4"
           >
-            <motion.h2 className="mb-8 font-mono text-3xl font-bold text-green-400">
+            <motion.h2 className="mb-6 text-center font-mono text-2xl font-bold text-green-400 sm:text-3xl md:mb-8">
               Добавьте категории и вопросы
             </motion.h2>
 
-            <div className="mb-6 w-lg space-y-4">
-              <div>
-                <h3 className="mb-2 font-mono text-xl text-green-400">
+            <div className="mx-auto max-w-2xl space-y-6">
+              <div className="space-y-4 rounded-lg bg-gray-800/50 p-4">
+                <h3 className="font-mono text-lg text-green-400 sm:text-xl">
                   Категории
                 </h3>
-                <input
-                  type="text"
-                  value={currentValue}
-                  onChange={(e) => setCurrentValue(e.target.value)}
-                  placeholder="Название категории"
-                  className="mb-6 w-lg rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
-                />
-                <Button onClick={addCategory} disabled={!currentValue.trim()}>
-                  Добавить
-                </Button>
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <input
+                    type="text"
+                    value={currentValue}
+                    onChange={(e) => setCurrentValue(e.target.value)}
+                    placeholder="Название категории"
+                    className="flex-1 rounded-lg border-2 border-green-400/50 bg-gray-800 p-3 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+                  />
+                  <Button onClick={addCategory} disabled={!currentValue.trim()}>
+                    Добавить
+                  </Button>
+                </div>
               </div>
 
               {setup.categories.length > 0 && (
-                <div>
-                  <h3 className="mb-2 font-mono text-xl text-green-400">
+                <div className="space-y-4 rounded-lg bg-gray-800/50 p-4">
+                  <h3 className="font-mono text-lg text-green-400 sm:text-xl">
                     Вопросы
                   </h3>
                   <select
                     onChange={(e) =>
                       setSelectedCategory(Number(e.target.value))
                     }
-                    className="mb-2 w-full rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+                    className="mb-4 w-full rounded-lg border-2 border-green-400/50 bg-gray-800 p-3 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
                   >
                     <option value="">Выберите категорию</option>
                     {setup.categories.map((cat, index) => (
@@ -273,7 +277,7 @@ const Home = () => {
                   </select>
 
                   {selectedCategory !== null && (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <input
                         type="text"
                         value={currentQuestion.text}
@@ -284,32 +288,34 @@ const Home = () => {
                           }))
                         }
                         placeholder="Текст вопроса"
-                        className="w-full rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+                        className="w-full rounded-lg border-2 border-green-400/50 bg-gray-800 p-3 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
                       />
-                      <input
-                        type="number"
-                        value={currentQuestion.price}
-                        onChange={(e) =>
-                          setCurrentQuestion((prev) => ({
-                            ...prev,
-                            price: Number(e.target.value),
-                          }))
-                        }
-                        placeholder="Стоимость"
-                        className="w-full rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
-                      />
-                      <input
-                        type="text"
-                        value={currentQuestion.answer}
-                        onChange={(e) =>
-                          setCurrentQuestion((prev) => ({
-                            ...prev,
-                            answer: e.target.value,
-                          }))
-                        }
-                        placeholder="Ответ"
-                        className="w-full rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
-                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          type="number"
+                          value={currentQuestion.price}
+                          onChange={(e) =>
+                            setCurrentQuestion((prev) => ({
+                              ...prev,
+                              price: Number(e.target.value),
+                            }))
+                          }
+                          placeholder="Стоимость"
+                          className="rounded-lg border-2 border-green-400/50 bg-gray-800 p-3 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+                        />
+                        <input
+                          type="text"
+                          value={currentQuestion.answer}
+                          onChange={(e) =>
+                            setCurrentQuestion((prev) => ({
+                              ...prev,
+                              answer: e.target.value,
+                            }))
+                          }
+                          placeholder="Ответ"
+                          className="rounded-lg border-2 border-green-400/50 bg-gray-800 p-3 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+                        />
+                      </div>
                       <Button
                         onClick={addQuestion}
                         disabled={!currentQuestion.text.trim()}
@@ -320,19 +326,22 @@ const Home = () => {
                   )}
                 </div>
               )}
-              <Button
-                onClick={toTeamsStep}
-                disabled={setup.categories.length === 0}
-              >
-                Перейти к командам
-              </Button>
-              <Button
-                onClick={() =>
-                  setSetup((prev) => ({ ...prev, step: "gameName" }))
-                }
-              >
-                Назад
-              </Button>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+                <Button
+                  onClick={() =>
+                    setSetup((prev) => ({ ...prev, step: "gameName" }))
+                  }
+                >
+                  Назад
+                </Button>
+                <Button
+                  onClick={toTeamsStep}
+                  disabled={setup.categories.length === 0}
+                >
+                  Перейти к командам
+                </Button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -342,50 +351,60 @@ const Home = () => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center"
+            className="mx-auto w-full px-4"
           >
-            <motion.h2 className="mb-8 font-mono text-3xl font-bold text-green-400">
+            <motion.h2 className="mb-6 text-center font-mono text-2xl font-bold text-green-400 sm:text-3xl md:mb-8">
               Добавьте команды
             </motion.h2>
 
-            <input
-              type="text"
-              value={currentValue}
-              onChange={(e) => setCurrentValue(e.target.value)}
-              placeholder="Название команды"
-              className="mb-6 w-lg rounded-lg border-2 border-green-400/50 bg-gray-800 p-4 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
-            />
-            <Button onClick={addTeam} disabled={!currentValue.trim()}>
-              Добавить
-            </Button>
+            <div className="mx-auto max-w-md space-y-6">
+              <div className="space-y-4 rounded-lg bg-gray-800/50 p-4">
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <input
+                    type="text"
+                    value={currentValue}
+                    onChange={(e) => setCurrentValue(e.target.value)}
+                    placeholder="Название команды"
+                    className="flex-1 rounded-lg border-2 border-green-400/50 bg-gray-800 p-3 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+                  />
+                  <Button onClick={addTeam} disabled={!currentValue.trim()}>
+                    Добавить
+                  </Button>
+                </div>
 
-            {setup.teams?.length > 0 && (
-              <div>
-                <h3 className="font-mono text-xl text-green-400">
-                  Добавленные команды:
-                </h3>
-                <ul className="mb-6 space-y-2">
-                  {setup.teams.map((team, index) => (
-                    <li key={index} className="font-mono text-gray-300">
-                      {team.name}
-                    </li>
-                  ))}
-                </ul>
+                {setup.teams?.length > 0 && (
+                  <div>
+                    <h3 className="mb-2 font-mono text-lg text-green-400 sm:text-xl">
+                      Добавленные команды:
+                    </h3>
+                    <ul className="space-y-2">
+                      {Array.isArray(setup.teams) &&
+                        setup.teams.map((team, index) => (
+                          <li key={index} className="font-mono text-gray-300">
+                            {team.name}
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
               </div>
-            )}
-            <Button
-              onClick={toReviewStep}
-              disabled={!setup.teams || setup.teams.length === 0}
-            >
-              Просмотр и завершение
-            </Button>
-            <Button
-              onClick={() =>
-                setSetup((prev) => ({ ...prev, step: "categories" }))
-              }
-            >
-              Назад
-            </Button>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+                <Button
+                  onClick={() =>
+                    setSetup((prev) => ({ ...prev, step: "categories" }))
+                  }
+                >
+                  Назад
+                </Button>
+                <Button
+                  onClick={toReviewStep}
+                  disabled={!setup.teams || setup.teams.length === 0}
+                >
+                  Просмотр и завершение
+                </Button>
+              </div>
+            </div>
           </motion.div>
         )}
 
@@ -394,60 +413,70 @@ const Home = () => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center"
+            className="mx-auto w-full px-4"
           >
-            <motion.h2 className="mb-8 font-mono text-3xl font-bold text-green-400">
+            <motion.h2 className="mb-6 text-center font-mono text-2xl font-bold text-green-400 sm:text-3xl md:mb-8">
               Проверьте данные
             </motion.h2>
 
-            <div className="mb-8 grid w-screen max-w-md grid-cols-3 justify-center space-y-6 gap-x-96">
-              <div>
-                <h3 className="mb-2 font-mono text-xl text-green-400">Игра:</h3>
-                <p className="font-mono text-gray-300">{setup.gameName}</p>
+            <div className="mx-auto max-w-4xl space-y-8">
+              <div className="grid gap-6 md:grid-cols-3">
+                <div className="rounded-lg bg-gray-800/50 p-4">
+                  <h3 className="mb-3 font-mono text-lg font-bold text-green-400 sm:text-xl">
+                    Игра:
+                  </h3>
+                  <p className="font-mono text-gray-300">{setup.gameName}</p>
+                </div>
+
+                <div className="rounded-lg bg-gray-800/50 p-4 md:col-span-2">
+                  <h3 className="mb-3 font-mono text-lg font-bold text-green-400 sm:text-xl">
+                    Категории:
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {setup.categories.map((cat, index) => (
+                      <div key={index} className="font-mono text-gray-300">
+                        <h4 className="font-bold text-green-400">{cat.name}</h4>
+                        <p className="text-sm text-gray-400">
+                          ({cat.questions.length} вопросов)
+                        </p>
+                        <ul className="mt-2 space-y-1">
+                          {cat.questions.map((q, qIndex) => (
+                            <li key={qIndex} className="text-xs sm:text-sm">
+                              <span className="text-green-400">{q.price}</span>{" "}
+                              баллов: {q.text}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-gray-800/50 p-4">
+                  <h3 className="mb-3 font-mono text-lg font-bold text-green-400 sm:text-xl">
+                    Команды:
+                  </h3>
+                  <ul className="space-y-2">
+                    {Array.isArray(setup.teams) &&
+                      setup.teams.map((team, index) => (
+                        <li key={index} className="font-mono text-gray-300">
+                          {team.name}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
               </div>
 
-              <div>
-                <h3 className="mb-2 font-mono text-xl text-green-400">
-                  Категории:
-                </h3>
-                <ul className="grid grid-cols-3 justify-center gap-x-36">
-                  {setup.categories.map((cat, index) => (
-                    <li key={index} className="font-mono text-gray-300">
-                      <span className="font-bold">{cat.name}</span> (
-                      {cat.questions.length} вопросов)
-                      <ul className="mt-1 ml-4">
-                        {cat.questions.map((q, qIndex) => (
-                          <li key={qIndex} className="text-sm">
-                            {q.price} баллов: {q.text}
-                          </li>
-                        ))}
-                      </ul>
-                    </li>
-                  ))}
-                </ul>
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+                <Button
+                  onClick={() =>
+                    setSetup((prev) => ({ ...prev, step: "teams" }))
+                  }
+                >
+                  Назад
+                </Button>
+                <Button onClick={completeSetup}>Создать игру</Button>
               </div>
-
-              <div>
-                <h3 className="mb-2 font-mono text-xl text-green-400">
-                  Команды:
-                </h3>
-                <ul className="space-y-2">
-                  {setup.teams.map((team, index) => (
-                    <li key={index} className="font-mono text-gray-300">
-                      {team.name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <Button
-                onClick={() => setSetup((prev) => ({ ...prev, step: "teams" }))}
-              >
-                Назад
-              </Button>
-              <Button onClick={completeSetup}>Создать игру</Button>
             </div>
           </motion.div>
         )}
