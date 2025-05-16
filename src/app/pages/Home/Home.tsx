@@ -232,15 +232,15 @@ const Home = () => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mx-auto w-full px-4"
+            className="px-4"
           >
-            <motion.h2 className="mb-6 text-center font-mono text-2xl font-bold text-green-400 sm:text-3xl md:mb-8">
+            <motion.h2 className="mb-6 text-center font-mono text-3xl font-bold text-green-400 sm:text-4xl md:mb-8">
               Добавьте категории и вопросы
             </motion.h2>
 
             <div className="mx-auto max-w-2xl space-y-6">
               <div className="space-y-4 rounded-lg bg-gray-800/50 p-4">
-                <h3 className="font-mono text-lg text-green-400 sm:text-xl">
+                <h3 className="font-mono text-lg text-green-400 sm:text-2xl">
                   Категории
                 </h3>
                 <div className="flex flex-col gap-4 sm:flex-row">
@@ -249,9 +249,13 @@ const Home = () => {
                     value={currentValue}
                     onChange={(e) => setCurrentValue(e.target.value)}
                     placeholder="Название категории"
-                    className="flex-1 rounded-lg border-2 border-green-400/50 bg-gray-800 p-3 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+                    className="h-15 flex-1 rounded-lg border-2 border-green-400/50 bg-gray-800 p-3 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
                   />
-                  <Button onClick={addCategory} disabled={!currentValue.trim()}>
+                  <Button
+                    onClick={addCategory}
+                    disabled={!currentValue.trim()}
+                    className="w-auto"
+                  >
                     Добавить
                   </Button>
                 </div>
@@ -259,7 +263,7 @@ const Home = () => {
 
               {setup.categories.length > 0 && (
                 <div className="space-y-4 rounded-lg bg-gray-800/50 p-4">
-                  <h3 className="font-mono text-lg text-green-400 sm:text-xl">
+                  <h3 className="font-mono text-lg text-green-400 sm:text-2xl">
                     Вопросы
                   </h3>
                   <select
@@ -318,6 +322,7 @@ const Home = () => {
                       </div>
                       <Button
                         onClick={addQuestion}
+                        className="w-full"
                         disabled={!currentQuestion.text.trim()}
                       >
                         Добавить вопрос
@@ -327,16 +332,18 @@ const Home = () => {
                 </div>
               )}
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+              <div className="flex flex-col">
                 <Button
                   onClick={() =>
                     setSetup((prev) => ({ ...prev, step: "gameName" }))
                   }
+                  className="h-16"
                 >
                   Назад
                 </Button>
                 <Button
                   onClick={toTeamsStep}
+                  className="h-16"
                   disabled={setup.categories.length === 0}
                 >
                   Перейти к командам
@@ -358,16 +365,16 @@ const Home = () => {
             </motion.h2>
 
             <div className="mx-auto max-w-md space-y-6">
-              <div className="space-y-4 rounded-lg bg-gray-800/50 p-4">
-                <div className="flex flex-col gap-4 sm:flex-row">
+              <div className="space-y-4 rounded-lg items-center bg-gray-800/50 p-4">
+                <div className="flex flex-col gap-4 items-center sm:flex-col">
                   <input
                     type="text"
                     value={currentValue}
                     onChange={(e) => setCurrentValue(e.target.value)}
                     placeholder="Название команды"
-                    className="flex-1 rounded-lg border-2 border-green-400/50 bg-gray-800 p-3 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
+                    className="flex h-15 w-full rounded-lg border-2 border-green-400/50 bg-gray-800 p-3 font-mono text-gray-100 focus:border-green-400 focus:outline-none"
                   />
-                  <Button onClick={addTeam} disabled={!currentValue.trim()}>
+                  <Button onClick={addTeam} className="w-full" disabled={!currentValue.trim()}>
                     Добавить
                   </Button>
                 </div>
@@ -389,7 +396,7 @@ const Home = () => {
                 )}
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-col sm:justify-between">
                 <Button
                   onClick={() =>
                     setSetup((prev) => ({ ...prev, step: "categories" }))

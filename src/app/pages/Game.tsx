@@ -34,7 +34,7 @@ const Game = () => {
         ...prev,
         teams: response.data,
       }));
-      console.log(response.data)
+      console.log(response.data);
     } catch (error) {
       console.error("Error fetching teams:", error);
     }
@@ -123,13 +123,13 @@ const Game = () => {
         const updatedTeams = prev.teams?.map((team) =>
           team.id === teamId
             ? { ...team, score: (team.score || 0) + selectedQuestion.price }
-            : team
+            : team,
         );
 
         const updatedCategories = prev.categories?.map((category) => ({
           ...category,
           questions: category.questions.map((q: IQuestion) =>
-            q.id === selectedQuestion.id ? { ...q, is_answered: true } : q
+            q.id === selectedQuestion.id ? { ...q, is_answered: true } : q,
           ),
         }));
 
@@ -145,8 +145,8 @@ const Game = () => {
         prevTeams.map((team) =>
           team.id === teamId
             ? { ...team, score: (team.score || 0) + selectedQuestion.price }
-            : team
-        )
+            : team,
+        ),
       );
 
       setSelectedQuestion(null);
@@ -162,13 +162,24 @@ const Game = () => {
     navigate("/leaderboard");
   };
 
+  const exitGame = () => {
+    setGameSetup({
+      step: "gameName",
+      gameName: "",
+      gameId: 0,
+      categories: [],
+      teams: [],
+    });
+    navigate("/");
+  };
+
   return (
     <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-gray-900">
       <BackgroundCode />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,255,0,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,255,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
 
       <div className="relative z-10 w-full max-w-6xl px-4">
-        <Header name={gameSetup.gameName || "Своя игра"} />
+        <Header name={gameSetup.gameName} />
 
         {isLoading && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -255,6 +266,17 @@ const Game = () => {
                   >
                     Рейтинг команд
                   </button>
+                  <button
+                    onClick={exitGame}
+                    className={clsx(
+                      "cursor-pointer rounded-lg border-2 px-6 py-3 font-mono transition",
+                      "border-red-400/50 bg-gray-800 text-red-400",
+                      "hover:border-red-400 hover:bg-red-400/10",
+                      "focus:ring-2 focus:ring-red-400/50 focus:outline-none",
+                    )}
+                  >
+                    Покинуть игру
+                  </button>
                 </div>
               </>
             ) : (
@@ -269,17 +291,18 @@ const Game = () => {
                   <h3 className="mb-6 font-mono text-2xl font-bold text-green-400">
                     Вопрос за {selectedQuestion.price} баллов
                   </h3>
-                  <p className="mb-8 font-mono text-xl text-gray-100">
+                  <p className="mb-8 font-mono text-3xl text-gray-100">
                     {selectedQuestion.text}
                   </p>
 
+                  {/* Модальное окно */}
                   {showAnswer ? (
                     <>
                       <div className="mb-6 rounded-lg bg-gray-700 p-4">
                         <h4 className="mb-2 font-mono font-bold text-green-400">
                           Ответ:
                         </h4>
-                        <p className="font-mono text-gray-100">
+                        <p className="font-mono text-2xl text-gray-100">
                           {currentAnswer || selectedQuestion.answer}
                         </p>
 
