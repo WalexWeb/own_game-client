@@ -3,30 +3,35 @@
 ## 🌟 Особенности проекта
 
 ### 🎨 Визуальные эффекты
-- Космический дизайн с анимированным звездным фоном
+
+- IT дизайн с анимированным звездным фоном
 - Неоновые UI-элементы с градиентами
 - Плавные переходы между состояниями
+- Последовательная смена страниц 
 
 ### ⚙️ Технологический стек
 
 #### Основные зависимости
-| Технология | Назначение |
-|------------|------------|
-| [React 19](https://react.dev/) | Библиотека для создания реактивных веб-интерфейсов|
-| [TypeScript](https://www.typescriptlang.org/) | Статическая типизация |
-| [Framer Motion](https://www.framer.com/motion/) | Продвинутые анимации |
-| [Tailwind CSS](https://tailwindcss.com/) | CSS-фреймворк |
-| [Jotai](https://jotai.org/) | Управление состоянием |
-| [React Query](https://tanstack.com/query/latest/) | Работа с API |
-| [Axios](https://axios-http.com/) | HTTP-клиент |
-| [React Router](https://reactrouter.com/) | Маршрутизация |
+
+| Технология                                        | Назначение                                         |
+| ------------------------------------------------- | -------------------------------------------------- |
+| [React 19](https://react.dev/)                    | Библиотека для создания реактивных веб-интерфейсов |
+| [TypeScript](https://www.typescriptlang.org/)     | Статическая типизация                              |
+| [Framer Motion](https://www.framer.com/motion/)   | Продвинутые анимации                               |
+| [Tailwind CSS](https://tailwindcss.com/)          | CSS-фреймворк                                      |
+| [Jotai](https://jotai.org/)                       | Управление состоянием                              |
+| [React Query](https://tanstack.com/query/latest/) | Работа с API                                       |
+| [Axios](https://axios-http.com/)                  | HTTP-клиент                                        |
+| [React Router](https://reactrouter.com/)          | Маршрутизация                                      |
 
 ## 🚀 Быстрый старт
 
 1. Установка зависимостей:
+
 ```bash
 npm install
 ```
+
 1. Запуск проекта:
 
 ```bash
@@ -39,19 +44,24 @@ npm run dev
 npm run build
 ```
 
-## 🏗️ Архитектура проекта
+## 🏗️ Архитектура проекта (Feature-Sliced Design)
 
 ```
 src/
 ├── api/             # Логика взаимодействия с API
+│   └── instance.ts            # Конфигурирование Axios
 ├── app/             # Основное приложение
 │   ├── assets/      # Статические ресурсы
 │   ├── components/  # UI-компоненты
 │   │   ├── animations/ # Анимации (Framer-motion)
-│   │   └── ui/      # Общие UI-компоненты
+│   │   ├── layout/     # Макеты и шапки (React, Framer Motion)
+│   │   └── ui/         # Общие UI-компоненты
 │   ├── pages/       # Страницы приложения
 │   └── App.tsx      # Корневой компонент приложения (React router dom)
 ├── stores/          # Состояние приложения (Jotai)
+│       └── gameStore.ts       # Атомы состояния игры
+├── types/           # Общие типы TypeScript
+│   └── *.ts         # Интерфейсы для категорий, команд, вопросов и т.д.
 ├── index.css        # Глобальные стили
 ├── main.tsx         # Точка входа
 ```
