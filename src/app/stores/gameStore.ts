@@ -1,7 +1,5 @@
 import { atomWithStorage } from "jotai/utils";
-import { ITeam } from "../../types/ITeam";
-import { IGameSetupState } from "../../types/IGameSetup";
-import { ICurrentGame } from "../../types/ICurrentGame";
+import { ICurrentGame, IGameSetupState, ITeam } from "../../types/IQuestion";
 
 export const currentGameAtom = atomWithStorage<ICurrentGame>("currentGame", {
   id: 0,
